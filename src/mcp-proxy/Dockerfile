@@ -11,7 +11,7 @@ RUN make build -e VERSION=${VERSION} -e COMMIT=${COMMIT} && chmod +x ${BINARY}
 # install dlv
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.23.1
 
-FROM debian:bullseye-slim
+FROM tencentos/tencentos4-minimal
 
 ARG BINARY=bk-apigateway-mcp-proxy
 

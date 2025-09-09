@@ -1,28 +1,12 @@
-ARG IMAGE=python
-ARG TAG=3.11.13-slim-bookworm
+ARG IMAGE=mirrors.tencent.com/blueking/python
+ARG TAG=3.11.13-ts4
 FROM ${IMAGE}:${TAG}
 
-# RUN sed -i "s/http/https/g" /etc/apt/sources.list
-
-# replace the source
-RUN echo 'deb https://mirrors.cloud.tencent.com/debian/ bookworm main contrib non-free\n\
-deb-src https://mirrors.cloud.tencent.com/debian/ bookworm main contrib non-free\n\
-deb https://mirrors.cloud.tencent.com/debian/ bookworm-updates main contrib non-free\n\
-deb-src https://mirrors.cloud.tencent.com/debian/ bookworm-updates main contrib non-free\n\
-deb https://mirrors.cloud.tencent.com/debian/ bookworm-backports main contrib non-free\n\
-deb-src https://mirrors.cloud.tencent.com/debian/ bookworm-backports main contrib non-free\n\
-deb https://mirrors.cloud.tencent.com/debian-security/ bookworm-security main contrib non-free\n\
-deb-src https://mirrors.cloud.tencent.com/debian-security/ bookworm-security main contrib non-free\n\
-' > /etc/apt/sources.list
-
-
-# RUN apt-get update && apt-get install -y --no-install-recommends libssl-dev libffi-dev \
-    # build-essential libc6-dev libjpeg-dev zlib1g-dev vim procps default-mysql-client curl zip unzip
-RUN apt-get update && apt-get install -y --no-install-recommends vim default-mysql-client curl zip unzip
+RUN dnf install -y vim mysql curl zip unzip git
 
 # install kona-jdk maven
-RUN curl -s "https://get.sdkman.io?ci=true" | bash
-RUN bash -c "source /root/.sdkman/bin/sdkman-init.sh && sdk install java 11.0.27-kona && rm -rf /root/.sdkman/archives/* && rm -rf /root/.sdkman/tmp/* && apt-get -y install maven"
+RUN curl -s "https://get.sdkman.io?ci=true" | bash && \
+    bash -c "source /root/.sdkman/bin/sdkman-init.sh && sdk install java 11.0.27-kona && rm -rf /root/.sdkman/archives/* && rm -rf /root/.sdkman/tmp/* && dnf -y install maven"
 
 # install mvn dep
 # replace the source
@@ -46,13 +30,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 WORKDIR /app
 ADD build/uv.lock  /app/uv.lock
 ADD build/pyproject.toml /app/pyproject.toml
-# for etcd3 lib installed from git
-RUN apt-get install -y git
-RUN export UV_PROJECT_ENVIRONMENT=/usr/local/ && uv sync --locked && uv clean
 
+RUN export UV_PROJECT_ENVIRONMENT=/usr/local/ && uv sync --locked && uv clean
 
 ADD build /app
 
-RUN apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/{apt,dpkg,cache,log}/
+RUN dnf clean all
 
 CMD ["bash", "/app/bin/start.sh"]

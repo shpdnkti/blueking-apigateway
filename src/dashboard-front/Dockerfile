@@ -11,18 +11,14 @@ RUN npm install --force
 RUN npm run build-only
 
 # nginx part
-FROM smebberson/alpine-nginx:3.0.0
+FROM tencentos/tencentos4-minimal 
 
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tencent.com/g' /etc/apk/repositories
-RUN sed -i 's/dl-4.alpinelinux.org/mirrors.tencent.com/g' /etc/apk/repositories
-
-RUN apk update && apk add gettext
-RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
+RUN dnf -y install nginx && \
+    dnf clean all && \
+    ln -sf /dev/stdout /var/log/nginx/access.log && \
     ln -sf /dev/stderr /var/log/nginx/error.log
 
-# clean useless files
-RUN cd /var/www && rm -r localhost
 # cp nginx files
 COPY custom-configs/default /etc/nginx/conf.d/default.conf
-COPY custom-configs/30-render /etc/cont-init.d/30-render
+# COPY custom-configs/30-render /etc/cont-init.d/30-render
 COPY --from=builder /app/dist/ /var/www/

@@ -1,15 +1,21 @@
-ARG IMAGE=python
-ARG TAG=3.6.15-slim-buster
+ARG IMAGE=tencentos/tencentos3-minimal
+ARG TAG=latest
 FROM ${IMAGE}:${TAG}
 
-RUN apt-get update && apt-get install -y libssl-dev libffi-dev \
-    libc6-dev build-essential vim procps
+RUN dnf -y install \
+        openssl-devel \
+        libffi-devel \
+        glibc-devel \
+        vim \
+        procps-ng \
+        python36 \
+        python36-devel
 
 ADD build /app
 WORKDIR /app
 
-ARG PYPI="https://pypi.org/simple/"
-RUN pip config set global.index-url "${PYPI}"
-RUN pip install -r requirements.txt
+RUN mkdir ~/.pip && printf '[global]\nindex-url = https://mirrors.tencent.com/pypi/simple/' > ~/.pip/pip.conf && \
+    pip3 install --upgrade pip && \
+    pip3 install -r requirements.txt
 
 CMD ["bash", "/app/bin/start.sh"]
